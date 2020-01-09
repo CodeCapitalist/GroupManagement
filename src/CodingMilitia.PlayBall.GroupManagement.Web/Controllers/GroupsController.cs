@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
+using CodingMilitia.PlayBall.GroupManagement.Business.Services;
+using CodingMilitia.PlayBall.GroupManagement.Web.Mappings;
 using CodingMilitia.PlayBall.GroupManagement.Web.Models;
 using Microsoft.AspNetCore.Mvc;
 
@@ -11,31 +13,32 @@ namespace CodingMilitia.PlayBall.GroupManagement.Web.Controllers
     [Route("groups")]
     public class GroupsController : Controller
     {
-        private static long currentGroupId = 1;
-        private static List<GroupViewModel> groups = new List<GroupViewModel>
+        private readonly IGroupsService _groupsService;
+
+        public GroupsController(IGroupsService groupsService)
         {
-            new GroupViewModel{ ID = 1, Name = "SampleGroup"}
-        };
+            _groupsService = groupsService;
+        }
 
         [HttpGet]
         [Route("")]
         public IActionResult Index()
         {
-            return View(groups);
+            return View(_groupsService.GetAll().ToViewModel());
         }
 
         [HttpGet]
         [Route("{id}")]
         public IActionResult Details(long id)
         {
-            var group = groups.SingleOrDefault(g => g.ID == id);
+            var group = _groupsService.GetById(id);
             if (group == null)
             {
                 return NotFound();
             }
             else
             {
-                return View(group);
+                return View(group.ToViewModel());
             }
         }
 
@@ -44,14 +47,13 @@ namespace CodingMilitia.PlayBall.GroupManagement.Web.Controllers
         [ValidateAntiForgeryToken]
         public IActionResult Edit(long id, GroupViewModel model)
         {
-            var group = groups.SingleOrDefault(g => g.ID == id);
+            var group = _groupsService.Update(model.ToServiceModel());
             if (group == null)
             {
                 return NotFound();
             }
             else
             {
-                group.Name = model.Name;
                 return RedirectToAction("Index");
             }
         }
@@ -67,8 +69,7 @@ namespace CodingMilitia.PlayBall.GroupManagement.Web.Controllers
         [Route("create")]
         public IActionResult Create(GroupViewModel model)
         {
-            model.ID = ++currentGroupId;
-            groups.Add(model);
+            _groupsService.Add(model.ToServiceModel());
             return RedirectToAction("Index");
         }
     }
