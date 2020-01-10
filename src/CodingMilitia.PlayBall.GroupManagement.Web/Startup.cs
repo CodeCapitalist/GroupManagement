@@ -1,4 +1,6 @@
-using CodingMilitia.PlayBall.GroupManagement.Web.Demo;
+using System;
+using CodingMilitia.PlayBall.GroupManagement.Web.Demo.Filters;
+using CodingMilitia.PlayBall.GroupManagement.Web.Demo.Middlewares;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -20,14 +22,18 @@ namespace CodingMilitia.PlayBall.GroupManagement.Web
         // For more information on how to configure your application, visit https://go.microsoft.com/fwlink/?LinkID=398940
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddMvc(option => option.EnableEndpointRouting = false);
-            var someRootConfiguration = new SomeRootConfiguration();
-            _config.GetSection("SomeRoot").Bind(someRootConfiguration);
-            services.AddSingleton(someRootConfiguration);
+            services.AddMvc(option =>
+                {
+                    option.EnableEndpointRouting = false;
+                    option.Filters.Add<DemoActionFilter>();
+                }
+            );
             services.AddBusiness();
+            services.AddTransient<RequestTimingFactoryMiddleware>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.  
+
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
             if (env.IsDevelopment())
@@ -36,7 +42,8 @@ namespace CodingMilitia.PlayBall.GroupManagement.Web
             }
 
             app.UseStaticFiles();
-
+            app.UseMiddleware<RequestTimingAdHocMiddleware>();
+            app.UseMiddleware<RequestTimingFactoryMiddleware>();
             app.UseMvc();
         }
     }
